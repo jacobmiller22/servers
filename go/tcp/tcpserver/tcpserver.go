@@ -11,7 +11,7 @@ func NewTCPServer() *TCPServer {
 	return &TCPServer{}
 }
 
-func (s *TCPServer) StartTCPServer(port uint16) error {
+func (s *TCPServer) StartTCPServer(port uint16, handleConnection func(int) error) error {
 	log.Printf("Starting TCP Server on port %d\n", port)
 
 	sockaddr := &syscall.SockaddrInet4{
@@ -42,18 +42,13 @@ func (s *TCPServer) StartTCPServer(port uint16) error {
 
 	for {
 		connfd, _, err := syscall.Accept(sockfd)
-
-		defer syscall.Close(connfd)
-
 		if err != nil {
 			log.Printf("Error accepting incoming connection: %v", err)
 			return err
 		}
 
-		log.Printf("Accepted connection client")
+		go handleConnection(connfd)
 
-		syscall.Write(connfd, []byte("Response from TCP Server"))
-
-		log.Printf("Sent a response to client")
 	}
+	return nil
 }
